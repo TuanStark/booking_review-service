@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  review-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: review-service-dev
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+    command: npm run start:dev
+    networks:
+      - review-network
+
+networks:
+  review-network:
+    driver: bridge
+
