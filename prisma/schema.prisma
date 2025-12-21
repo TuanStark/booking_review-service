@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+model RoomReview {
+  id          String   @id @default(uuid())
+
+  /// Relations
+  roomId           String
+  userId           String
+  bookingId        String   @unique
+
+  ratingOverall    Int
+  ratingClean      Int?
+  ratingLocation   Int?
+  ratingPrice      Int?
+  ratingService    Int?
+
+  comment           String?
+  status            ReviewStatus @default(VISIBLE)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  images            RoomReviewImage[]
+  reply             RoomReviewReply?
+
+  @@index([roomId])
+  @@index([userId])
+  @@index([status])
+  @@map("room_reviews")
+}
+
+model RoomReviewImage {
+  id          String   @id @default(uuid())
+  reviewId  String
+
+  imageUrl  String
+
+  createdAt DateTime @default(now())
+
+  review    RoomReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@map("room_review_images")
+}
+
+model RoomReviewReply {
+  id          String   @id @default(uuid())
+  reviewId  String   @unique
+  adminId   String
+
+  reply     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review    RoomReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@map("room_review_replies")
+}
+
+model RoomRatingStat {
+  roomId        String  @id
+
+  totalReviews  Int     @default(0)
+
+  avgRating     Decimal @db.Decimal(3,2)
+
+  avgClean      Decimal? @db.Decimal(3,2)
+  avgLocation   Decimal? @db.Decimal(3,2)
+  avgPrice      Decimal? @db.Decimal(3,2)
+  avgService    Decimal? @db.Decimal(3,2)
+
+  updatedAt     DateTime @updatedAt
+
+  @@map("room_rating_stats")
+}
