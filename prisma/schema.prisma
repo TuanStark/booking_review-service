@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum ReviewStatus {
@@ -13,76 +14,39 @@ enum ReviewStatus {
 }
 
 model RoomReview {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  /// Relations
-  roomId           String
-  userId           String
-  bookingId        String   @unique
+  roomId    String
+  userId    String
+  bookingId String @unique // 1 booking = 1 review (DB enforce)
 
-  ratingOverall    Int
-  ratingClean      Int?
-  ratingLocation   Int?
-  ratingPrice      Int?
-  ratingService    Int?
+  ratingOverall  Int
+  ratingClean    Int?
+  ratingLocation Int?
+  ratingPrice    Int?
+  ratingService  Int?
 
-  comment           String?
-  status            ReviewStatus @default(VISIBLE)
-
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  images            RoomReviewImage[]
-  reply             RoomReviewReply?
-
-  @@index([roomId])
-  @@index([userId])
-  @@index([status])
-  @@map("room_reviews")
-}
-
-model RoomReviewImage {
-  id          String   @id @default(uuid())
-  reviewId  String
-
-  imageUrl  String
-
-  createdAt DateTime @default(now())
-
-  review    RoomReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-
-  @@index([reviewId])
-  @@map("room_review_images")
-}
-
-model RoomReviewReply {
-  id          String   @id @default(uuid())
-  reviewId  String   @unique
-  adminId   String
-
-  reply     String
+  comment String?
+  status  ReviewStatus @default(VISIBLE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  review    RoomReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-
-  @@map("room_review_replies")
+  @@index([roomId])
+  @@index([userId])
+  @@index([status])
 }
 
 model RoomRatingStat {
-  roomId        String  @id
+  roomId String @id
 
-  totalReviews  Int     @default(0)
+  totalReviews Int     @default(0)
+  avgRating    Decimal @db.Decimal(3, 2)
 
-  avgRating     Decimal @db.Decimal(3,2)
+  avgClean    Decimal?
+  avgLocation Decimal?
+  avgPrice    Decimal?
+  avgService  Decimal?
 
-  avgClean      Decimal? @db.Decimal(3,2)
-  avgLocation   Decimal? @db.Decimal(3,2)
-  avgPrice      Decimal? @db.Decimal(3,2)
-  avgService    Decimal? @db.Decimal(3,2)
-
-  updatedAt     DateTime @updatedAt
-
-  @@map("room_rating_stats")
+  updatedAt DateTime @updatedAt
 }

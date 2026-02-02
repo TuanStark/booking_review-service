@@ -15,7 +15,8 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  await app.listen(3000);
-  console.log(`Review service is running on port ${process.env.PORT}`);
+  const port = process.env.PORT || 3008;
+  await app.listen(port);
+  console.log(`Review service is running on port ${port}`);
 }
 bootstrap();

@@ -1,20 +1,51 @@
-import { IsInt, IsOptional, IsString, Min, Max, IsArray } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 
+/**
+ * DTO for creating a new room review.
+ * All rating fields are 1-5 scale.
+ */
 export class CreateReviewDto {
-  @IsInt()
-  bookingId: number;
+  @IsString()
+  bookingId: string;
 
   @IsInt()
   @Min(1)
   @Max(5)
   ratingOverall: number;
 
-  @IsOptional() @IsInt() @Min(1) @Max(5)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
   ratingClean?: number;
 
-  @IsOptional() @IsString()
-  comment?: string;
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  ratingLocation?: number;
 
-  @IsOptional() @IsArray()
-  images?: string[];
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  ratingPrice?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  ratingService?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  comment?: string;
 }
