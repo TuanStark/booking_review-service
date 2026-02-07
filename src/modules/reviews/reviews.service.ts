@@ -19,6 +19,7 @@ import {
 } from '../../common/types/review.types';
 import { RoomReview } from '@prisma/client';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { QueryReviewDto } from './dto/query-reviews.dto';
 
 @Injectable()
 export class ReviewService {
@@ -38,19 +39,15 @@ export class ReviewService {
    */
   async createReview(userId: string, dto: CreateReviewDto): Promise<RoomReview> {
     // 1. Get Booking Info
-    const bookingKey = REDIS_KEY.BOOKING(Number(dto.bookingId)); // Using string ID for DB but number for current redis key format if legacy?
-    // Note: External service uses 'number' ID currently, but our DTO is string.
-    // Assuming we need to convert or maintain consistency.
-    // Based on existing code, bookingId was string but converted to number for external calls?
-    // Let's stick to string for internal logic, but convert if external API requires number.
+    const bookingKey = REDIS_KEY.BOOKING(dto.bookingId);
 
-    let booking = await this.redis.get<any>(REDIS_KEY.BOOKING(Number(dto.bookingId)));
+    let booking = await this.redis.get<any>(bookingKey);
 
     if (!booking) {
-      booking = await this.external.getBooking(Number(dto.bookingId));
+      booking = await this.external.getBooking(dto.bookingId);
       if (!booking) throw new NotFoundException('Booking not found');
       await this.redis.set(
-        REDIS_KEY.BOOKING(Number(dto.bookingId)),
+        bookingKey,
         booking,
         TTL.BOOKING,
       );
@@ -90,6 +87,7 @@ export class ReviewService {
         // No images relation anymore
       },
     });
+    console.log(review);
 
     // 6. Update stats & clear cache
     await this.ratingStats.recalculateStats(roomId);
@@ -157,9 +155,60 @@ export class ReviewService {
     return response;
   }
 
-  /**
-   * Get reviews by user.
-   */
+  async findAll(query: QueryReviewDto, token?: string) {
+    const { sortBy = 'createdAt', sortOrder = 'desc' } = query;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+
+    if (page < 1 || limit < 1) {
+      throw new Error('Page and limit must be greater than 0');
+    }
+
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where: any = {};
+
+    if (query.search) {
+      const searchCap =
+        query.search.charAt(0).toUpperCase() + query.search.slice(1);
+
+      where.OR = [
+        { title: { contains: searchCap } },
+        { content: { contains: searchCap } },
+      ];
+    }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const orderBy = { [sortBy]: sortOrder };
+
+    const [reviews, total] = await Promise.all([
+      this.prisma.roomReview.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+      }),
+
+      this.prisma.roomReview.count({ where }),
+    ]);
+
+    const reviewsWithUser = await this.enrichReviewsWithUserData(reviews, token);
+
+    return {
+      data: reviewsWithUser,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async getByUser(
     userId: string,
     pagination: PaginationDto,
@@ -193,9 +242,6 @@ export class ReviewService {
     };
   }
 
-  /**
-   * Update review.
-   */
   async updateReview(
     reviewId: string,
     userId: string,
@@ -223,9 +269,6 @@ export class ReviewService {
     return updated;
   }
 
-  /**
-   * Soft delete review.
-   */
   async deleteReview(reviewId: string, userId: string): Promise<void> {
     const review = await this.prisma.roomReview.findUnique({
       where: { id: reviewId },
@@ -246,12 +289,35 @@ export class ReviewService {
   }
 
   private async getUserInfo(userId: string) {
-    const key = REDIS_KEY.USER(Number(userId));
+    const key = REDIS_KEY.USER(userId);
     let user = await this.redis.get<any>(key);
     if (!user) {
-      user = await this.external.getUser(Number(userId));
+      user = await this.external.getUser(userId);
       if (user) await this.redis.set(key, user, TTL.USER);
     }
     return user;
+  }
+
+  private async enrichReviewsWithUserData(reviews: any[], token?: string) {
+    if (reviews.length === 0) {
+      return reviews;
+    }
+
+    // Collect tất cả userId
+    const userIds: string[] = [];
+    reviews.forEach((review) => {
+      if (review.userId && !userIds.includes(review.userId)) {
+        userIds.push(review.userId);
+      }
+    });
+
+    // Fetch users parallel (tối ưu performance)
+    const usersMap = await this.getUserInfo(userIds.join(','));
+
+    // Map user data vào reviews
+    return reviews.map((review) => ({
+      ...review,
+      user: usersMap.get(review.userId) || null,
+    }));
   }
 }

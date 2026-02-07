@@ -9,27 +9,49 @@ import {
   Query,
   Req,
   UseGuards,
+  HttpStatus,
 } from '@nestjs/common';
 import { ReviewService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { PaginationDto } from './dto/pagination.dto';
-
-// Assuming we have an AuthGuard, or using a custom decorator/interceptor for auth
-// For now, using standard request object to get user info
+import { QueryReviewDto } from './dto/query-reviews.dto';
+import { ResponseData } from 'src/common/global/globalClass';
+import { HttpMessage } from 'src/common/global/globalEnum';
 
 @Controller('reviews')
 export class ReviewController {
   constructor(private readonly service: ReviewService) { }
 
   @Post()
-  create(@Req() req: any, @Body() dto: CreateReviewDto) {
-    // Assuming req.user is populated by AuthGuard/Middleware
-    // If not, we might need to handle it. 
-    // Based on previous code: req.user.id
-    const userId = req.user?.id || req.headers['x-user-id'];
-    // Fallback for dev/testing if auth middleware not fully integrated in this service yet
-    return this.service.createReview(String(userId), dto);
+  async create(
+    @Body() createReviewDto: CreateReviewDto,
+    @Req() req: Request,
+  ) {
+    try {
+      console.log(createReviewDto);
+      const userId = req.headers['x-user-id'] as string;
+      console.log(userId);
+
+      if (!userId || userId === 'undefined') {
+        throw new Error('User ID is required');
+      }
+      const review = await this.service.createReview(
+        userId,
+        createReviewDto,
+      );
+      return new ResponseData(
+        review,
+        HttpStatus.ACCEPTED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(
+        null,
+        HttpStatus.NOT_FOUND,
+        HttpMessage.NOT_FOUND,
+      );
+    }
   }
 
   @Get('room/:roomId')
@@ -37,7 +59,19 @@ export class ReviewController {
     @Param('roomId') roomId: string,
     @Query() pagination: PaginationDto,
   ) {
-    return this.service.getByRoom(roomId, pagination);
+    try {
+      return new ResponseData(
+        this.service.getByRoom(roomId, pagination),
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(
+        null,
+        HttpStatus.NOT_FOUND,
+        HttpMessage.NOT_FOUND,
+      );
+    }
   }
 
   @Get('user/:userId')
@@ -45,7 +79,36 @@ export class ReviewController {
     @Param('userId') userId: string,
     @Query() pagination: PaginationDto,
   ) {
-    return this.service.getByUser(userId, pagination);
+    try {
+      return new ResponseData(
+        this.service.getByUser(userId, pagination),
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(
+        null,
+        HttpStatus.NOT_FOUND,
+        HttpMessage.NOT_FOUND,
+      );
+    }
+  }
+
+  @Get()
+  findAll(@Query() query: QueryReviewDto) {
+    try {
+      return new ResponseData(
+        this.service.findAll(query),
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(
+        null,
+        HttpStatus.NOT_FOUND,
+        HttpMessage.NOT_FOUND,
+      );
+    }
   }
 
   @Patch(':id')
@@ -54,13 +117,37 @@ export class ReviewController {
     @Param('id') id: string,
     @Body() dto: UpdateReviewDto,
   ) {
-    const userId = req.user?.id || req.headers['x-user-id'];
-    return this.service.updateReview(id, String(userId), dto);
+    const userId = req.headers['x-user-id'] as string;
+    try {
+      return new ResponseData(
+        this.service.updateReview(id, userId, dto),
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(
+        null,
+        HttpStatus.NOT_FOUND,
+        HttpMessage.NOT_FOUND,
+      );
+    }
   }
 
   @Delete(':id')
   remove(@Req() req: any, @Param('id') id: string) {
-    const userId = req.user?.id || req.headers['x-user-id'];
-    return this.service.deleteReview(id, String(userId));
+    const userId = req.headers['x-user-id'] as string;
+    try {
+      return new ResponseData(
+        this.service.deleteReview(id, userId),
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(
+        null,
+        HttpStatus.NOT_FOUND,
+        HttpMessage.NOT_FOUND,
+      );
+    }
   }
 }

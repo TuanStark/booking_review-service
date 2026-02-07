@@ -31,7 +31,7 @@ export class ExternalService {
    */
   async getUser(id: number | string) {
     const userId = String(id);
-    const cacheKey = REDIS_KEY.USER(Number(userId)); // Keep number for consistency with existing keys if needed, or switch to string
+    const cacheKey = REDIS_KEY.USER(userId);
 
     // Check cache
     const cached = await this.redisService.get(cacheKey);

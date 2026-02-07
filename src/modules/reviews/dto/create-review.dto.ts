@@ -15,6 +15,10 @@ export class CreateReviewDto {
   @IsString()
   bookingId: string;
 
+  @IsOptional()
+  @IsString()
+  roomId?: string;
+
   @IsInt()
   @Min(1)
   @Max(5)

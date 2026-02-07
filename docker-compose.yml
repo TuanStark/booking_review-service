@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  review-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: review-service
+    ports:
+      - "3008:3008"
+    env_file:
+      - .env
+    volumes:
+      - /app/node_modules
+    user: node
+    command: sh -c "npx prisma migrate deploy && node dist/main"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3008/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      my_custom_network:
+        ipv4_address: ${APP_IP}
+
+networks:
+  my_custom_network:
+    external: true
