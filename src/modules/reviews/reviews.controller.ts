@@ -8,7 +8,9 @@ import {
   Param,
   Query,
   Req,
-  UseGuards,
+  HttpException,
+  BadRequestException,
+  Logger,
   HttpStatus,
 } from '@nestjs/common';
 import { ReviewService } from './reviews.service';
@@ -21,6 +23,7 @@ import { HttpMessage } from 'src/common/global/globalEnum';
 
 @Controller('reviews')
 export class ReviewController {
+  private readonly logger = new Logger(ReviewController.name);
   constructor(private readonly service: ReviewService) { }
 
   @Post()

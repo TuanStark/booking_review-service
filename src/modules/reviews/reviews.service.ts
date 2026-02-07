@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -16,6 +17,7 @@ import { RatingStatsService } from '../rating-stats/rating-stats.service';
 import {
   ReviewWithUser,
   PaginatedResponse,
+  BookingInfo,
 } from '../../common/types/review.types';
 import { RoomReview } from '@prisma/client';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -34,48 +36,25 @@ export class ReviewService {
 
   /**
    * Create a new review.
-   * Validates booking ownership and completion status.
-   * Updates rating stats immediately.
+   * Trusting Gateway to have validated booking ownership and completion.
    */
   async createReview(userId: string, dto: CreateReviewDto): Promise<RoomReview> {
-    // 1. Get Booking Info
-    const bookingKey = REDIS_KEY.BOOKING(dto.bookingId);
-
-    let booking = await this.redis.get<any>(bookingKey);
-
-    if (!booking) {
-      booking = await this.external.getBooking(dto.bookingId);
-      if (!booking) throw new NotFoundException('Booking not found');
-      await this.redis.set(
-        bookingKey,
-        booking,
-        TTL.BOOKING,
-      );
+    if (!dto.roomId) {
+      throw new BadRequestException('Room ID is required');
     }
 
-    // 2. Validate
-    if (String(booking.userId) !== userId)
-      throw new ForbiddenException('Not your booking');
-
-    if (booking.status !== 'COMPLETED')
-      throw new ForbiddenException('Booking not completed');
-
-    // 3. Duplicate check
+    // 1. Duplicate check
     const existed = await this.prisma.roomReview.findUnique({
       where: {
         bookingId: dto.bookingId,
       },
     });
-    if (existed) throw new ConflictException('Already reviewed');
+    if (existed) throw new ConflictException('You have already reviewed this booking');
 
-    // 4. Room validation (ensure room exists)
-    // We trust booking.roomId is valid, but good to check/cache room info
-    const roomId = String(booking.roomId);
-
-    // 5. Create review
+    // 2. Create review
     const review = await this.prisma.roomReview.create({
       data: {
-        roomId,
+        roomId: dto.roomId,
         userId,
         bookingId: dto.bookingId,
         ratingOverall: dto.ratingOverall,
@@ -84,14 +63,12 @@ export class ReviewService {
         ratingPrice: dto.ratingPrice,
         ratingService: dto.ratingService,
         comment: dto.comment,
-        // No images relation anymore
       },
     });
-    console.log(review);
 
-    // 6. Update stats & clear cache
-    await this.ratingStats.recalculateStats(roomId);
-    await this.redis.del(REDIS_KEY.ROOM_REVIEWS(roomId));
+    this.logger.log(`Review created: ${review.id} for Room ${dto.roomId} by User ${userId}`);
+
+    await this.ratingStats.recalculateStats(dto.roomId);
 
     return review;
   }
