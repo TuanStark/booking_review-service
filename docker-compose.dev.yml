@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  review-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder # Tùy chọn build stage chứa toàn bộ devDependencies
+    container_name: review-service-dev
+    ports:
+      - "3008:3008"
+    env_file:
+      - .env
+    volumes:
+      # Mount source code local vào container để reload lập tức
+      - ./:/app 
+    user: root # Tạm thời dùng root để có quyền npm install map từ host
+    # Tự động install packages trong container Linux trước khi chạy NestJS tránh lỗi thiếu file binary
+    command: sh -c "npm i -g @nestjs/cli && npm install && npm run start:dev" 
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3008/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      my_custom_network:
+        ipv4_address: ${APP_IP}
+
+networks:
+  my_custom_network:
+    external: true

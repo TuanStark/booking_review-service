@@ -14,8 +14,8 @@ RUN npm ci --legacy-peer-deps
 # Copy toàn bộ source code
 COPY . .
 
-# Generate Prisma Client + Build NestJS
-RUN npx prisma generate && \
+# Generate Prisma Client + Build NestJS (dung local binary, tranh npx download CLI moi)
+RUN ./node_modules/.bin/prisma generate && \
   npm run build
 
 # =============================
@@ -30,13 +30,12 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist         ./dist
 COPY --from=builder /app/prisma       ./prisma
 
-# Cài CHỈ production dependencies
+# Cai CHI production dependencies
 RUN npm ci --only=production --legacy-peer-deps && \
-  npm cache clean --force && \
-  rm -rf /app/node_modules/.prisma
+  npm cache clean --force
 
-# Tái tạo Prisma Client trong môi trường sạch (binary nhỏ hơn)
-RUN npx prisma generate
+# Copy Prisma Client da duoc generate tu builder (tranh chay lai tren prod)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # =============================
 # 3. FINAL IMAGE – Runtime only
