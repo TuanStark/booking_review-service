@@ -1,3 +1,3 @@
 export const appConfig = {
-    port: process.env.PORT || 3008,
-}
+  port: process.env.PORT || 3008,
+};

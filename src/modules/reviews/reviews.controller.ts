@@ -24,13 +24,10 @@ import { HttpMessage } from 'src/common/global/globalEnum';
 @Controller('reviews')
 export class ReviewController {
   private readonly logger = new Logger(ReviewController.name);
-  constructor(private readonly service: ReviewService) { }
+  constructor(private readonly service: ReviewService) {}
 
   @Post()
-  async create(
-    @Body() createReviewDto: CreateReviewDto,
-    @Req() req: Request,
-  ) {
+  async create(@Body() createReviewDto: CreateReviewDto, @Req() req: Request) {
     try {
       console.log(createReviewDto);
       const userId = req.headers['x-user-id'] as string;
@@ -39,15 +36,8 @@ export class ReviewController {
       if (!userId || userId === 'undefined') {
         throw new Error('User ID is required');
       }
-      const review = await this.service.createReview(
-        userId,
-        createReviewDto,
-      );
-      return new ResponseData(
-        review,
-        HttpStatus.ACCEPTED,
-        HttpMessage.SUCCESS,
-      );
+      const review = await this.service.createReview(userId, createReviewDto);
+      return new ResponseData(review, HttpStatus.ACCEPTED, HttpMessage.SUCCESS);
     } catch (error) {
       return new ResponseData(
         null,

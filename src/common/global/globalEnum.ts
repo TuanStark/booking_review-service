@@ -16,7 +16,7 @@ export enum HttpStatus {
   // Server error responses
   SERVER_ERROR = 500,
   SERVICE_UNAVAILABLE = 503,
-  DATABASE_ERROR = 500,
+  DATABASE_ERROR = 501,
 }
 
 export enum HttpMessage {

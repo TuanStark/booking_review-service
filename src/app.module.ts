@@ -8,10 +8,16 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { RatingStatsModule } from './modules/rating-stats/rating-stats.module';
 
 @Module({
-  imports: [PrismaModule, ExternalModule, ConfigModule.forRoot({
-    isGlobal: true,
-  }), ReviewsModule, RatingStatsModule],
+  imports: [
+    PrismaModule,
+    ExternalModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    ReviewsModule,
+    RatingStatsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

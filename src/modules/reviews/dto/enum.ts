@@ -1,5 +1,5 @@
 export enum ReviewStatus {
-    VISIBLE = 'VISIBLE',
-    HIDDEN = 'HIDDEN',
-    DELETED = 'DELETED',
+  VISIBLE = 'VISIBLE',
+  HIDDEN = 'HIDDEN',
+  DELETED = 'DELETED',
 }

@@ -9,4 +9,4 @@ import { RedisModule } from '../../messaging/redis/redis.module';
   providers: [RatingStatsService],
   exports: [RatingStatsService],
 })
-export class RatingStatsModule { }
+export class RatingStatsModule {}

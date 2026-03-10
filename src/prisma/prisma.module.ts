@@ -6,13 +6,13 @@ import prisma from './client';
 
 @Global()
 @Module({
-    providers: [
-        PrismaService,
-        {
-            provide: PrismaClient,
-            useValue: prisma,
-        },
-    ],
-    exports: [PrismaService, PrismaClient],
+  providers: [
+    PrismaService,
+    {
+      provide: PrismaClient,
+      useValue: prisma,
+    },
+  ],
+  exports: [PrismaService, PrismaClient],
 })
-export class PrismaModule { }
+export class PrismaModule {}

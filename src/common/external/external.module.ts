@@ -7,4 +7,4 @@ import { RedisModule } from '../../messaging/redis/redis.module';
   providers: [ExternalService],
   exports: [ExternalService],
 })
-export class ExternalModule { }
+export class ExternalModule {}

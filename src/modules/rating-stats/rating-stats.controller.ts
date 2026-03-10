@@ -3,7 +3,7 @@ import { RatingStatsService } from './rating-stats.service';
 
 @Controller('rating-stats')
 export class RatingStatsController {
-  constructor(private readonly service: RatingStatsService) { }
+  constructor(private readonly service: RatingStatsService) {}
 
   @Get(':roomId')
   getStats(@Param('roomId') roomId: string) {

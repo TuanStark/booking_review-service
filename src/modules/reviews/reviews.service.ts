@@ -32,13 +32,16 @@ export class ReviewService {
     private redis: RedisService,
     private external: ExternalService,
     private ratingStats: RatingStatsService,
-  ) { }
+  ) {}
 
   /**
    * Create a new review.
    * Trusting Gateway to have validated booking ownership and completion.
    */
-  async createReview(userId: string, dto: CreateReviewDto): Promise<RoomReview> {
+  async createReview(
+    userId: string,
+    dto: CreateReviewDto,
+  ): Promise<RoomReview> {
     if (!dto.roomId) {
       throw new BadRequestException('Room ID is required');
     }
@@ -49,7 +52,8 @@ export class ReviewService {
         bookingId: dto.bookingId,
       },
     });
-    if (existed) throw new ConflictException('You have already reviewed this booking');
+    if (existed)
+      throw new ConflictException('You have already reviewed this booking');
 
     // 2. Create review
     const review = await this.prisma.roomReview.create({
@@ -66,7 +70,9 @@ export class ReviewService {
       },
     });
 
-    this.logger.log(`Review created: ${review.id} for Room ${dto.roomId} by User ${userId}`);
+    this.logger.log(
+      `Review created: ${review.id} for Room ${dto.roomId} by User ${userId}`,
+    );
 
     await this.ratingStats.recalculateStats(dto.roomId);
 
@@ -83,11 +89,11 @@ export class ReviewService {
     const limit = pagination.limit || 10;
     const cursor = pagination.cursor;
 
-    // Try cache for first page only? 
+    // Try cache for first page only?
     // For simplicity, we cache the first page (no cursor)
     if (!cursor) {
       const cached = await this.redis.get<PaginatedResponse<ReviewWithUser>>(
-        REDIS_KEY.ROOM_REVIEWS(roomId)
+        REDIS_KEY.ROOM_REVIEWS(roomId),
       );
       if (cached) return cached;
     }
@@ -173,7 +179,10 @@ export class ReviewService {
       this.prisma.roomReview.count({ where }),
     ]);
 
-    const reviewsWithUser = await this.enrichReviewsWithUserData(reviews, token);
+    const reviewsWithUser = await this.enrichReviewsWithUserData(
+      reviews,
+      token,
+    );
 
     return {
       data: reviewsWithUser,

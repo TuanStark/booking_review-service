@@ -6,14 +6,14 @@ import { Type } from 'class-transformer';
  * Scales better than offset pagination for large datasets.
  */
 export class PaginationDto {
-    @IsOptional()
-    @IsString()
-    cursor?: string;
+  @IsOptional()
+  @IsString()
+  cursor?: string;
 
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    @Max(50)
-    limit?: number = 10;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number = 10;
 }

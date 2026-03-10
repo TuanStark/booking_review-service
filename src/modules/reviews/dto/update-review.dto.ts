@@ -7,9 +7,9 @@ import { IsOptional, IsString, MaxLength } from 'class-validator';
  * Users can only update ratings and comment, not bookingId.
  */
 export class UpdateReviewDto extends PartialType(CreateReviewDto) {
-    // Override: bookingId cannot be changed
-    @IsOptional()
-    @IsString()
-    @MaxLength(2000)
-    declare comment?: string;
+  // Override: bookingId cannot be changed
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  declare comment?: string;
 }

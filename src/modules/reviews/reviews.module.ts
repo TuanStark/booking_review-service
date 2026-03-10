@@ -11,4 +11,4 @@ import { ExternalModule } from '../../common/external/external.module';
   providers: [ReviewService],
   exports: [ReviewService],
 })
-export class ReviewsModule { }
+export class ReviewsModule {}
